@@ -1,10 +1,10 @@
 import mysql.connector
 
-db = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="cyberhub"
-)
 
-cursor = db.cursor(dictionary=True)
+def get_db_connection():
+    return mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="cyberhub",
+    )

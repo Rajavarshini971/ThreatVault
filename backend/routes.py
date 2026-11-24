@@ -1,25 +1,48 @@
 from app import app
 from flask import jsonify
-from db import cursor
+from mysql.connector import Error
+
+from db import get_db_connection
 
 
-# Search by term
-@app.route('/search/<term>', methods=['GET'])
+@app.route("/search/<term>", methods=["GET"])
 def search_term(term):
-    query = "SELECT * FROM threats WHERE term_name = %s"
-    cursor.execute(query, (term,))
-    result = cursor.fetchone()
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            query = "SELECT * FROM threats WHERE term_name = %s"
+            cursor.execute(query, (term,))
+            result = cursor.fetchone()
+        finally:
+            cursor.close()
 
-    if result:
-        return jsonify(result)
-    else:
-        return jsonify({"message": "Term not found"})
+        if result:
+            return jsonify(result)
+        return jsonify({"message": "Term not found"}), 404
+    except Error as exc:
+        return jsonify({"message": "Database error", "details": str(exc)}), 500
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
 
 
-# Get all threats
-@app.route('/threats', methods=['GET'])
+@app.route("/threats", methods=["GET"])
 def get_threats():
-    query = "SELECT * FROM threats"
-    cursor.execute(query)
-    result = cursor.fetchall()
-    return jsonify(result)
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            query = "SELECT * FROM threats"
+            cursor.execute(query)
+            result = cursor.fetchall()
+        finally:
+            cursor.close()
+        return jsonify(result)
+    except Error as exc:
+        return jsonify({"message": "Database error", "details": str(exc)}), 500
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
